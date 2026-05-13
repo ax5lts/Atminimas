@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atminimas – šablonas (1 video)</title>
+<style>
+html {
+  margin: 0;
+  min-height: 100%;
+  background: #cfcfcf;
+}
+body {
+  margin: 0 5%;
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: #fff;
+}
+.antmastis {
+  position: relative;
+  margin: 0 0 1rem;
+  padding: 1.25rem 0.75rem;
+  overflow: hidden;
+}
+.antmastis h2,
+.antmastis h4,
+.antmastis h5 {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  margin: 0.35em 0;
+}
+.video-fs-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  background: #111;
+}
+.video-fs-wrap video {
+  display: block;
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+}
+.video-fs-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(120px, 30vw);
+  height: min(120px, 30vw);
+  border-radius: 50%;
+  border: none;
+  margin: 0;
+  padding: 0 0 0 0.2em;
+  background: rgba(255, 255, 255, 0.95);
+  color: #111;
+  font-size: clamp(2.2rem, 10vw, 3.8rem);
+  line-height: 1;
+  cursor: pointer;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45);
+}
+.video-fs-play:hover {
+  background: #fff;
+}
+.video-fs-play[hidden] {
+  display: none !important;
+}
+.video-fs-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 10;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  margin: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.video-fs-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.video-fs-close[hidden] {
+  display: none !important;
+}
+.video-fs-wrap:fullscreen,
+.video-fs-wrap:-webkit-full-screen,
+.video-fs-wrap.fs-fake {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  max-width: none;
+  box-sizing: border-box;
+  background: #000;
+}
+.video-fs-wrap:fullscreen video,
+.video-fs-wrap:-webkit-full-screen video,
+.video-fs-wrap.fs-fake video {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: auto;
+  max-height: 100vh;
+  object-fit: contain;
+}
+.video-fs-wrap.fs-fake {
+  position: fixed;
+  inset: 0;
+  z-index: 99990;
+}
+</style>
+</head>
+<body>
+
+<section class="antmastis" id="antmastis" aria-label="Antraštė">
+  <h2>VARDAS PAVARDĖ</h2>
+  <h4>Gimimo data – mirties data</h4>
+  <h5>EPITAFIJA</h5>
+</section>
+
+<!-- Vienas vaizdo įrašas: pakeisk src -->
+<div class="video-fs-wrap">
+  <video playsinline controls>
+    <source src="finals.mp4" type="video/mp4">
+  </video>
+  <button type="button" class="video-fs-play" aria-label="Visas ekranas">▶</button>
+  <button type="button" class="video-fs-close" hidden aria-label="Išeiti iš viso ekrano">✕</button>
+</div>
+
+<script>
+function syncOneVideoFsUi(wrap) {
+  var fsEl =
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement;
+  var native = fsEl === wrap;
+  var fake = wrap.classList.contains("fs-fake");
+  var active = native || fake;
+  var playBtn = wrap.querySelector(".video-fs-play");
+  var closeBtn = wrap.querySelector(".video-fs-close");
+  if (playBtn) playBtn.hidden = active;
+  if (closeBtn) closeBtn.hidden = !active;
+}
+function syncAllVideoFsUi() {
+  document.querySelectorAll(".video-fs-wrap").forEach(syncOneVideoFsUi);
+}
+function openVideoFullscreen(wrap) {
+  var video = wrap.querySelector("video");
+  var after = function () {
+    syncOneVideoFsUi(wrap);
+    if (video) video.play().catch(function () {});
+  };
+  var req =
+    wrap.requestFullscreen ||
+    wrap.webkitRequestFullscreen ||
+    wrap.mozRequestFullScreen;
+  if (req) {
+    Promise.resolve(req.call(wrap))
+      .then(after)
+      .catch(function () {
+        wrap.classList.add("fs-fake");
+        document.body.style.overflow = "hidden";
+        after();
+      });
+  } else {
+    wrap.classList.add("fs-fake");
+    document.body.style.overflow = "hidden";
+    after();
+  }
+}
+function closeVideoFullscreen(wrap) {
+  var fsEl =
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement;
+  if (fsEl === wrap) {
+    var ex =
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.mozCancelFullScreen;
+    if (ex) Promise.resolve(ex.call(document)).catch(function () {});
+  }
+  wrap.classList.remove("fs-fake");
+  document.body.style.overflow = "";
+  syncOneVideoFsUi(wrap);
+}
+function initVideoFullscreenControls() {
+  document.querySelectorAll(".video-fs-wrap").forEach(function (wrap) {
+    if (wrap.dataset.videoFsInit === "1") return;
+    wrap.dataset.videoFsInit = "1";
+    var playBtn = wrap.querySelector(".video-fs-play");
+    var closeBtn = wrap.querySelector(".video-fs-close");
+    if (playBtn) {
+      playBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        openVideoFullscreen(wrap);
+      });
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        closeVideoFullscreen(wrap);
+      });
+    }
+    syncOneVideoFsUi(wrap);
+  });
+}
+document.addEventListener("fullscreenchange", syncAllVideoFsUi);
+document.addEventListener("webkitfullscreenchange", syncAllVideoFsUi);
+document.addEventListener("mozfullscreenchange", syncAllVideoFsUi);
+document.addEventListener("keydown", function (e) {
+  if (e.key !== "Escape") return;
+  document.querySelectorAll(".video-fs-wrap.fs-fake").forEach(closeVideoFullscreen);
+});
+initVideoFullscreenControls();
+</script>
+
+</body>
+</html>
